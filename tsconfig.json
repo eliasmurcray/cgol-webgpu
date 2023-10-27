@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "esModuleInterop": true,
+    "strict": true,
+    "strictNullChecks": true,
+    "types": ["@webgpu/types"]
+  }
+}

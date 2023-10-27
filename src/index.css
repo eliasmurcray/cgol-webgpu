@@ -1,0 +1,17 @@
+body {
+  margin: 0;
+  background: #ffffff;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+canvas {
+  display: block;
+  width: min(600px, 100vw);
+  height: min(600px, 100vh);
+  outline: 0;
+  border: 0;
+}

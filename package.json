@@ -1,0 +1,19 @@
+{
+  "name": "fluid-simulation",
+  "version": "1.0.0",
+  "description": "Fluid simulation using WebGPU",
+  "scripts": {
+    "build": "webpack --mode=production",
+    "dev": "webpack --mode=development --watch"
+  },
+  "author": "Elias Murcray",
+  "license": "MIT",
+  "dependencies": {
+    "@webgpu/types": "^0.1.38",
+    "css-loader": "^6.8.1",
+    "html-webpack-plugin": "^5.5.3",
+    "mini-css-extract-plugin": "^2.7.6",
+    "ts-loader": "^9.5.0",
+    "typescript": "^5.2.2"
+  }
+}
