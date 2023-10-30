@@ -1,5 +1,7 @@
 import "./index.css";
+import shaderSource from "./cell-shader.wgsl";
 
+const GRID_SIZE = 4;
 const canvas = document.querySelector("canvas") as HTMLCanvasElement;
 
 if (!canvas) {
@@ -59,16 +61,7 @@ const vertexBufferLayout: GPUVertexBufferLayout = {
 };
 
 const cellShaderModule = device.createShaderModule({
-  code: `
-  @vertex
-  fn vertexMain(@location(0) pos: vec2f) -> @builtin(position) vec4f {
-    return vec4f(pos, 0, 1);
-  }
-  @fragment
-  fn fragmentMain() -> @location(0) vec4f {
-    return vec4f(0, 0.8, 1.0, 1);
-  }
-  `,
+  code: shaderSource,
   label: "Cell shader",
 });
 
@@ -91,6 +84,28 @@ const cellPipeline = device.createRenderPipeline({
   },
 });
 
+// Uniform buffer that describes the grid
+const uniformArray = new Float32Array([GRID_SIZE, GRID_SIZE]);
+const uniformBuffer = device.createBuffer({
+  label: "Grid Uniforms",
+  size: uniformArray.byteLength,
+  usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+});
+device.queue.writeBuffer(uniformBuffer, 0, uniformArray);
+
+const bindGroup = device.createBindGroup({
+  label: "Cell renderer bind group",
+  layout: cellPipeline.getBindGroupLayout(0),
+  entries: [
+    {
+      binding: 0,
+      resource: {
+        buffer: uniformBuffer,
+      },
+    },
+  ],
+});
+
 // Clear canvas
 const encoder = device.createCommandEncoder();
 const pass = encoder.beginRenderPass({
@@ -98,14 +113,15 @@ const pass = encoder.beginRenderPass({
     {
       view: context.getCurrentTexture().createView(),
       loadOp: "clear",
-      clearValue: [0, 0.5, 0.7, 1],
+      clearValue: [0.15, 0.15, 0.2, 1.0],
       storeOp: "store",
     },
   ],
 });
 pass.setPipeline(cellPipeline);
 pass.setVertexBuffer(0, vertexBuffer);
-pass.draw(vertices.length / 2);
+pass.setBindGroup(0, bindGroup);
+pass.draw(vertices.length / 2, GRID_SIZE * GRID_SIZE);
 pass.end();
 const commandBuffer = encoder.finish();
 device.queue.submit([commandBuffer]);
