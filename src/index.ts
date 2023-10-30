@@ -1,7 +1,7 @@
 import "./index.css";
 import shaderSource from "./cell-shader.wgsl";
 
-const GRID_SIZE = 4;
+const GRID_SIZE = 10;
 const canvas = document.querySelector("canvas") as HTMLCanvasElement;
 
 if (!canvas) {
