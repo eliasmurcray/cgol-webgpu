@@ -2,7 +2,7 @@ import "./index.css";
 import cellShaderSource from "./cell-shader.wgsl";
 import simulationShaderSource from "./simulation-shader.wgsl";
 
-const GRID_SIZE = 32;
+const GRID_SIZE = 1000;
 const canvas = document.querySelector("canvas") as HTMLCanvasElement;
 
 if (!canvas) {
@@ -215,7 +215,7 @@ const bindGroups = [
   }),
 ];
 
-const UPDATE_INTERVAL = 200;
+const UPDATE_INTERVAL = 100;
 let step = 0;
 function updateGrid() {
   const encoder = device.createCommandEncoder();
