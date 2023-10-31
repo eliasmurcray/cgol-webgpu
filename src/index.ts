@@ -2,7 +2,7 @@ import "./index.css";
 import cellShaderSource from "./cell-shader.wgsl";
 import simulationShaderSource from "./simulation-shader.wgsl";
 
-const GRID_SIZE = 16;
+const GRID_SIZE = 32;
 const canvas = document.querySelector("canvas") as HTMLCanvasElement;
 
 if (!canvas) {
@@ -165,7 +165,7 @@ const cellStateStorage = [
 
 // Mark every third cell of the first grid as active.
 for (let i = 0; i < cellStateArray.length; i += 3) {
-  cellStateArray[i] = 1;
+  cellStateArray[i] = Math.random() > 0.6 ? 1 : 0;
 }
 device.queue.writeBuffer(cellStateStorage[0], 0, cellStateArray);
 
@@ -254,4 +254,5 @@ function updateGrid() {
   device.queue.submit([encoder.finish()]);
 }
 
+updateGrid();
 setInterval(updateGrid, UPDATE_INTERVAL);
