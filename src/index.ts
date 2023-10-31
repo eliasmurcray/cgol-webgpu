@@ -1,7 +1,8 @@
 import "./index.css";
-import shaderSource from "./cell-shader.wgsl";
+import cellShaderSource from "./cell-shader.wgsl";
+import simulationShaderSource from "./simulation-shader.wgsl";
 
-const GRID_SIZE = 32;
+const GRID_SIZE = 16;
 const canvas = document.querySelector("canvas") as HTMLCanvasElement;
 
 if (!canvas) {
@@ -33,12 +34,24 @@ context.configure({
   format: canvasFormat,
 });
 
+const SQUARE_SIZE = 0.8;
+
 // Drawing a square
 const vertices = new Float32Array([
   // Triangle 1
-  -0.8, 0.8, 0.8, 0.8, -0.8, -0.8,
+  -SQUARE_SIZE,
+  SQUARE_SIZE,
+  SQUARE_SIZE,
+  SQUARE_SIZE,
+  -SQUARE_SIZE,
+  -SQUARE_SIZE,
   // Triangle 2
-  -0.8, -0.8, 0.8, 0.8, 0.8, -0.8,
+  -SQUARE_SIZE,
+  -SQUARE_SIZE,
+  SQUARE_SIZE,
+  SQUARE_SIZE,
+  SQUARE_SIZE,
+  -SQUARE_SIZE,
 ]);
 
 const vertexBuffer = device.createBuffer({
@@ -61,13 +74,45 @@ const vertexBufferLayout: GPUVertexBufferLayout = {
 };
 
 const cellShaderModule = device.createShaderModule({
-  code: shaderSource,
-  label: "Cell shader",
+  code: cellShaderSource,
+  label: "Cell Shader",
+});
+
+const simulationShaderModule = device.createShaderModule({
+  label: "Simulation Shader",
+  code: simulationShaderSource,
+});
+
+// Create the bind group layout and pipeline layout.
+const bindGroupLayout = device.createBindGroupLayout({
+  label: "Cell Bind Group Layout",
+  entries: [
+    {
+      binding: 0,
+      visibility: GPUShaderStage.VERTEX | GPUShaderStage.COMPUTE | GPUShaderStage.FRAGMENT,
+      buffer: {},
+    },
+    {
+      binding: 1,
+      visibility: GPUShaderStage.VERTEX | GPUShaderStage.COMPUTE | GPUShaderStage.FRAGMENT,
+      buffer: { type: "read-only-storage" },
+    },
+    {
+      binding: 2,
+      visibility: GPUShaderStage.COMPUTE,
+      buffer: { type: "storage" },
+    },
+  ],
+});
+
+const pipelineLayout = device.createPipelineLayout({
+  label: "Cell Pipeline Layout",
+  bindGroupLayouts: [bindGroupLayout],
 });
 
 const cellPipeline = device.createRenderPipeline({
   label: "Cell pipeline",
-  layout: "auto",
+  layout: pipelineLayout,
   vertex: {
     module: cellShaderModule,
     entryPoint: "vertexMain",
@@ -81,6 +126,16 @@ const cellPipeline = device.createRenderPipeline({
         format: canvasFormat,
       },
     ],
+  },
+});
+
+// Create a compute pipeline that updates the game state.
+const simulationPipeline = device.createComputePipeline({
+  label: "Simulation pipeline",
+  layout: pipelineLayout,
+  compute: {
+    module: simulationShaderModule,
+    entryPoint: "computeMain",
   },
 });
 
@@ -120,10 +175,11 @@ for (let i = 0; i < cellStateArray.length; i++) {
 }
 device.queue.writeBuffer(cellStateStorage[1], 0, cellStateArray);
 
+// Create a bind group to pass the grid uniforms into the pipeline
 const bindGroups = [
   device.createBindGroup({
     label: "Cell renderer bind group A",
-    layout: cellPipeline.getBindGroupLayout(0),
+    layout: bindGroupLayout,
     entries: [
       {
         binding: 0,
@@ -133,11 +189,15 @@ const bindGroups = [
         binding: 1,
         resource: { buffer: cellStateStorage[0] },
       },
+      {
+        binding: 2,
+        resource: { buffer: cellStateStorage[1] },
+      },
     ],
   }),
   device.createBindGroup({
     label: "Cell renderer bind group B",
-    layout: cellPipeline.getBindGroupLayout(0),
+    layout: bindGroupLayout,
     entries: [
       {
         binding: 0,
@@ -147,6 +207,10 @@ const bindGroups = [
         binding: 1,
         resource: { buffer: cellStateStorage[1] },
       },
+      {
+        binding: 2,
+        resource: { buffer: cellStateStorage[0] },
+      },
     ],
   }),
 ];
@@ -154,10 +218,20 @@ const bindGroups = [
 const UPDATE_INTERVAL = 200;
 let step = 0;
 function updateGrid() {
+  const encoder = device.createCommandEncoder();
+
+  const computePass = encoder.beginComputePass();
+
+  computePass.setPipeline(simulationPipeline);
+  computePass.setBindGroup(0, bindGroups[step % 2]);
+
+  const workgroupCount = Math.ceil(GRID_SIZE / 8);
+  computePass.dispatchWorkgroups(workgroupCount, workgroupCount);
+
+  computePass.end();
   step++;
 
   // Start a render pass
-  const encoder = device.createCommandEncoder();
   const pass = encoder.beginRenderPass({
     colorAttachments: [
       {
