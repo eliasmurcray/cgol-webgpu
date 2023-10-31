@@ -2,15 +2,15 @@ import "./index.css";
 import cellShaderSource from "./cell-shader.wgsl";
 import simulationShaderSource from "./simulation-shader.wgsl";
 
-const GRID_SIZE = 1000;
+const GRID_SIZE = 100;
 const canvas = document.querySelector("canvas") as HTMLCanvasElement;
 
 if (!canvas) {
   throw new Error("No canvas.");
 }
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+canvas.width = Math.min(window.innerWidth, window.innerHeight) - 40;
+canvas.height = Math.min(window.innerWidth, window.innerHeight) - 40;
 
 if (!navigator.gpu) {
   throw new Error("WebGPU not supported on this browser.");
