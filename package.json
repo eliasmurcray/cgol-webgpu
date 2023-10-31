@@ -11,10 +11,12 @@
   "dependencies": {
     "@webgpu/types": "^0.1.38",
     "css-loader": "^6.8.1",
+    "development": "^0.0.6",
     "html-webpack-plugin": "^5.5.3",
     "mini-css-extract-plugin": "^2.7.6",
     "raw-loader": "^4.0.2",
     "ts-loader": "^9.5.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "webpack-cli": "^5.1.4"
   }
 }
